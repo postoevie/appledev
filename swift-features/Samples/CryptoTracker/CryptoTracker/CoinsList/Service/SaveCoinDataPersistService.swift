@@ -10,8 +10,8 @@ import SwiftData
 
 ///  Actor gearantees mutex access. That allows to enqueue jobs and let it be taken by some thread in the pool.
 ///  Model Actor adds DefaultSerialModelExecutor making ModelContext access safe.
-@ModelActor actor SaveCoinDataPersistService: FetchCoinDataUseCaseResponder {
-    
+@ModelActor actor SaveCoinDataPersistService: LocalCoinDataServiceType {
+ 
     nonisolated func coinsDataFetchUseCaseCompleted(data: [CoinData]) {
         Task {
             // Actor is supposed to be run on a thread from the pool.
@@ -19,8 +19,14 @@ import SwiftData
         }
     }
     
-    /// Creates or updates database coin entities
-    func save(coinItems: [CoinData]) async throws {
+    func getItems() throws -> [CoinData] {
+        try modelContext
+            .fetch(FetchDescriptor<Coin>())
+            .map { CoinData(name: $0.name, price: $0.price) }
+    }
+
+    /// Updates (and creates if missing) database coin entities
+    func save(coinItems: [CoinData]) throws {
         
         // TODO: Try to make it with custom context and set debug flags for concurrency in coredata
         

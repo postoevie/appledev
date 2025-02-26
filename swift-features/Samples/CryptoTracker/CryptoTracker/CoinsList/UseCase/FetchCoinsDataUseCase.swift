@@ -7,43 +7,68 @@
 
 import Foundation
 import Combine
+import Network
+
+// TODO: Update tests, inversion of networkMonitor
 
 final class FetchCoinsDataUseCase: FetchCoinsDataUseCaseType {
     
     private var timer: Timer?
-    private var currentTask: Task<Void, Never>?
+    private var updatePricesTask: Task<Void, Never>?
+    
+    private var netStatus: NWPath.Status?
+    private let networkMonitor = NWPathMonitor()
+    private let networkMonitorQueue = DispatchQueue(label: "NetworkMonitor")
     
     private var coinNames: [String] = []
     @Published private var coinData: [CoinData] = []
+    
     private var subscriptions: [AnyCancellable] = []
     
     private let fireInterval: Double
-    private let fetchService: FetchCoinDataServiceType
+    private let remoteDataService: RemoteCoinDataServiceType
+    private let localDataService: LocalCoinDataServiceType
     
     init(fireInterval: Double,
-         fetchService: FetchCoinDataServiceType) {
+         remoteDataService: RemoteCoinDataServiceType,
+         localDataService: LocalCoinDataServiceType) {
         self.fireInterval = fireInterval
-        self.fetchService = fetchService
+        self.remoteDataService = remoteDataService
+        self.localDataService = localDataService
+        
+        self.networkMonitor.pathUpdateHandler = { path in
+            guard self.netStatus != path.status else {
+                return
+            }
+            self.netStatus = path.status
+            if path.status == .satisfied {
+                Task {
+                    try await self.updateCoinsNames()
+                    try await self.updatePrices()
+                    await MainActor.run {
+                        self.timer = Timer.scheduledTimer(timeInterval: fireInterval,
+                                                          target: self,
+                                                          selector: #selector(self.timerFired),
+                                                          userInfo: nil,
+                                                          repeats: true)
+                    }
+                }
+            } else {
+                self.cancel()
+            }
+        }
     }
     
     func start() {
         Task {
-            try await updateCoinsNames()
-            try await updatePrices()
-            await MainActor.run {
-                timer = Timer.scheduledTimer(timeInterval: fireInterval,
-                                             target: self,
-                                             selector: #selector(timerFired),
-                                             userInfo: nil,
-                                             repeats: true)
-            }
+            self.coinData = try await localDataService.getItems()
+            self.networkMonitor.start(queue: networkMonitorQueue)
         }
     }
     
     func cancel() {
         timer?.invalidate()
-        currentTask?.cancel()
-        currentTask = nil
+        updatePricesTask?.cancel()
     }
     
     func subscribe(_ responder: FetchCoinDataUseCaseResponder) {
@@ -55,18 +80,9 @@ final class FetchCoinsDataUseCase: FetchCoinsDataUseCaseType {
             .store(in: &subscriptions)
     }
     
-    func subscribeStrong(_ responder: FetchCoinDataUseCaseResponder) {
-        $coinData
-            .removeDuplicates()
-            .sink { data in
-                responder.coinsDataFetchUseCaseCompleted(data: data)
-            }
-            .store(in: &subscriptions)
-    }
-    
     @objc func timerFired() {
-        currentTask?.cancel()
-        currentTask = Task {
+        updatePricesTask?.cancel()
+        updatePricesTask = Task {
             do {
                 try await updatePrices()
             } catch {
@@ -76,7 +92,7 @@ final class FetchCoinsDataUseCase: FetchCoinsDataUseCaseType {
     }
     
     private func updateCoinsNames() async throws {
-        coinNames = try await fetchService.fetchCoinsList()
+        coinNames = try await remoteDataService.fetchCoinsList()
     }
     
     private func updatePrices() async throws {
@@ -85,7 +101,7 @@ final class FetchCoinsDataUseCase: FetchCoinsDataUseCaseType {
         try await withThrowingTaskGroup(of: CoinData.self) { group in
             for coinName in coinNames {
                 group.addTask {
-                    let price = try await self.fetchService.fetchCoinPrice(coinName: coinName)
+                    let price = try await self.remoteDataService.fetchCoinPrice(coinName: coinName)
                     
                     try Task.checkCancellation()
                     
@@ -98,7 +114,9 @@ final class FetchCoinsDataUseCase: FetchCoinsDataUseCaseType {
         
         try Task.checkCancellation()
         
-        coinData = coins
+        try await localDataService.save(coinItems: coins)
+        
+        coinData = try await localDataService.getItems()
     }
     
     deinit {

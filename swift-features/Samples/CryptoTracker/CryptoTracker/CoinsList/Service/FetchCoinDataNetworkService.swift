@@ -7,7 +7,7 @@
 
 import Foundation
 
-actor FetchCoinDataNetworkService: FetchCoinDataServiceType {
+actor FetchCoinDataNetworkService: RemoteCoinDataServiceType {
     
     func fetchCoinsList() async throws -> [String] {
         [
