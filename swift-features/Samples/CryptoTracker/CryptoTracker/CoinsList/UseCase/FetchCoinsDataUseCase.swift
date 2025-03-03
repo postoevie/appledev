@@ -7,67 +7,41 @@
 
 import Foundation
 import Combine
-import Network
 
-// TODO: Update tests, inversion of networkMonitor
-
-final class FetchCoinsDataUseCase: FetchCoinsDataUseCaseType {
+final class FetchCoinsDataUseCase: FetchCoinsDataUseCaseType, NetworkAvailabilityReponder {
     
-    private var timer: Timer?
-    private var updatePricesTask: Task<Void, Never>?
-    
-    private var netStatus: NWPath.Status?
-    private let networkMonitor = NWPathMonitor()
-    private let networkMonitorQueue = DispatchQueue(label: "NetworkMonitor")
+    private var updatePricesTimer: Timer? // Regularly causes prices update
+    private var updatePricesTask: Task<Void, Never>? // Current prices updating task
     
     private var coinNames: [String] = []
     @Published private var coinData: [CoinData] = []
     
     private var subscriptions: [AnyCancellable] = []
     
-    private let fireInterval: Double
-    private let remoteDataService: RemoteCoinDataServiceType
-    private let localDataService: LocalCoinDataServiceType
+    private let tickInterval: Double
+    private let remoteDataService: CoinDataServiceRemoteType
+    private let localDataService: CoinDataServiceLocalType
+    private let networkAvailabilityService: NetworkAvailabilityServiceType
     
-    init(fireInterval: Double,
-         remoteDataService: RemoteCoinDataServiceType,
-         localDataService: LocalCoinDataServiceType) {
-        self.fireInterval = fireInterval
+    init(tickInterval: Double,
+         remoteDataService: CoinDataServiceRemoteType,
+         localDataService: CoinDataServiceLocalType,
+         networkAvailabilityService: NetworkAvailabilityServiceType) {
+        self.tickInterval = tickInterval
         self.remoteDataService = remoteDataService
         self.localDataService = localDataService
-        
-        self.networkMonitor.pathUpdateHandler = { path in
-            guard self.netStatus != path.status else {
-                return
-            }
-            self.netStatus = path.status
-            if path.status == .satisfied {
-                Task {
-                    try await self.updateCoinsNames()
-                    try await self.updatePrices()
-                    await MainActor.run {
-                        self.timer = Timer.scheduledTimer(timeInterval: fireInterval,
-                                                          target: self,
-                                                          selector: #selector(self.timerFired),
-                                                          userInfo: nil,
-                                                          repeats: true)
-                    }
-                }
-            } else {
-                self.cancel()
-            }
-        }
+        self.networkAvailabilityService = networkAvailabilityService
     }
     
     func start() {
         Task {
             self.coinData = try await localDataService.getItems()
-            self.networkMonitor.start(queue: networkMonitorQueue)
+            self.networkAvailabilityService.start()
         }
     }
     
     func cancel() {
-        timer?.invalidate()
+        updatePricesTimer?.invalidate()
         updatePricesTask?.cancel()
     }
     
@@ -91,10 +65,27 @@ final class FetchCoinsDataUseCase: FetchCoinsDataUseCaseType {
         }
     }
     
-    private func updateCoinsNames() async throws {
-        coinNames = try await remoteDataService.fetchCoinsList()
+    // MARK: NetworkAvailabilityReponder
+    
+    func networkAvailabilityStatusChanged(status: NetStatus) {
+        if status == .satisfied {
+            Task {
+                self.coinNames = try await remoteDataService.fetchCoinsList()
+                try await self.updatePrices()
+                await MainActor.run {
+                    self.updatePricesTimer = Timer.scheduledTimer(timeInterval: tickInterval,
+                                                                  target: self,
+                                                                  selector: #selector(self.timerFired),
+                                                                  userInfo: nil,
+                                                                  repeats: true)
+                }
+            }
+        } else {
+            self.cancel()
+        }
     }
     
+    /// Update price for each coin in coinNames[]
     private func updatePrices() async throws {
         // Fetch coins data from web.
         let coins =
@@ -120,7 +111,7 @@ final class FetchCoinsDataUseCase: FetchCoinsDataUseCaseType {
     }
     
     deinit {
-        timer?.invalidate()
+        updatePricesTimer?.invalidate()
     }
 }
 

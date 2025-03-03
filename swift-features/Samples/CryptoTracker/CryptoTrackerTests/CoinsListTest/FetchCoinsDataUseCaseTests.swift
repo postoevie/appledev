@@ -12,19 +12,24 @@ final class FetchCoinsDataUseCaseTests: XCTestCase {
 
     private var sut: FetchCoinsDataUseCase!
     private var fetchService: MockFetchCoinDataService!
+    private var saveService: MockSaveCoinDataService!
+    private var availabilityService: MockNetworkAvailabilityService!
     
     override func setUpWithError() throws {
         fetchService = MockFetchCoinDataService()
-        sut = FetchCoinsDataUseCase(fireInterval: 3.0,
-                                    fetchService: fetchService)
+        saveService = MockSaveCoinDataService()
+        availabilityService = MockNetworkAvailabilityService()
+        sut = FetchCoinsDataUseCase(tickInterval: 3.0,
+                                    remoteDataService: fetchService,
+                                    localDataService: saveService,
+                                    networkAvailabilityService: availabilityService)
+        availabilityService.responder = sut
     }
 
     func testFillViewModelItems() throws {
         let uiResponder = MockUIResponder()
-        let saveResponder = MockSaveResponder()
         
         sut.subscribe(uiResponder)
-        sut.subscribe(saveResponder)
         
         let beforeTickExpectation = XCTestExpectation()
         
@@ -35,8 +40,8 @@ final class FetchCoinsDataUseCaseTests: XCTestCase {
         
         // Test before timer fires
         DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+            XCTAssert(self.saveService.coinsList == [CoinData(name: "bitcoin", price: 90_000)])
             XCTAssert(uiResponder.savedData == [CoinData(name: "bitcoin", price: 90_000)])
-            XCTAssert(saveResponder.savedData == [CoinData(name: "bitcoin", price: 90_000)])
             beforeTickExpectation.fulfill()
         }
         wait(for: [beforeTickExpectation], timeout: 10)
@@ -47,8 +52,8 @@ final class FetchCoinsDataUseCaseTests: XCTestCase {
         
         // Wait for timer to tick (3 sec)
         DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+            XCTAssert(self.saveService.coinsList == [CoinData(name: "bitcoin", price: 100_000)])
             XCTAssert(uiResponder.savedData == [CoinData(name: "bitcoin", price: 100_000)])
-            XCTAssert(saveResponder.savedData == [CoinData(name: "bitcoin", price: 100_000)])
             afterTickExpectation.fulfill()
         }
         
@@ -56,7 +61,18 @@ final class FetchCoinsDataUseCaseTests: XCTestCase {
     }
 }
 
-private class MockFetchCoinDataService: FetchCoinDataServiceType {
+private class MockNetworkAvailabilityService: NetworkAvailabilityServiceType {
+    
+    var responder: NetworkAvailabilityReponder?
+    
+    var status: NetStatus = .satisfied
+    
+    func start() {
+        responder?.networkAvailabilityStatusChanged(status: status)
+    }
+}
+
+private class MockFetchCoinDataService: CoinDataServiceRemoteType {
     
     var mockData: [String: Double] = [:]
     var coinsList: [String] = []
@@ -70,14 +86,16 @@ private class MockFetchCoinDataService: FetchCoinDataServiceType {
     }
 }
 
-private class MockSaveResponder: SaveCoinDataServiceType {
+private class MockSaveCoinDataService: CoinDataServiceLocalType {
+
+    var coinsList: [CoinData] = []
     
-    var savedData: [CoinData] = []
-    var expectation: XCTestExpectation?
+    func save(coinItems: [CoinData]) async throws {
+        coinsList = coinItems
+    }
     
-    func coinsDataFetchUseCaseCompleted(data: [CoinData]) {
-        savedData = data
-        expectation?.fulfill()
+    func getItems() async throws -> [CoinData] {
+        coinsList
     }
 }
 

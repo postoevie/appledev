@@ -11,16 +11,20 @@ import SwiftUI
 struct CoinsListAssembly {
     
     func build(modelContainer: ModelContainer) -> some View {
-        let viewModel = CoinsListViewModel()
+        let networkService = NetworkAvailabilityService()
         
-        let fetchUseCase = FetchCoinsDataUseCase(fireInterval: 5.0,
+        let fetchUseCase = FetchCoinsDataUseCase(tickInterval: 5.0,
                                                  remoteDataService: FetchCoinDataNetworkService(),
-                                                 localDataService: SaveCoinDataPersistService(modelContainer: modelContainer))
+                                                 localDataService: SaveCoinDataPersistService(modelContainer: modelContainer),
+                                                 networkAvailabilityService: networkService)
+        networkService.subscribe(fetchUseCase)
         
         // Opt for persisting data asyncronously with no dependency for UI updates.
         // Keep reference in subscription.
         let presenter = CoinsListPresenter(fetchUseCase: fetchUseCase)
         fetchUseCase.subscribe(presenter)
+        
+        let viewModel = CoinsListViewModel()
         presenter.viewModel = viewModel
         
         let view = CoinsListView(viewModel: viewModel,

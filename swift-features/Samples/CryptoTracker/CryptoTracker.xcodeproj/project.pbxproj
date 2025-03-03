@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		520DFBFE2D75F7C30010ABF3 /* NetworkAvailabilityService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 520DFBFD2D75F7C30010ABF3 /* NetworkAvailabilityService.swift */; };
 		52538D1D2D6474F900FB487A /* CryptoTrackerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52538D1C2D6474F900FB487A /* CryptoTrackerApp.swift */; };
 		52538D212D6474FA00FB487A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 52538D202D6474FA00FB487A /* Assets.xcassets */; };
 		52538D252D6474FA00FB487A /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 52538D242D6474FA00FB487A /* Preview Assets.xcassets */; };
@@ -44,6 +45,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		520DFBFD2D75F7C30010ABF3 /* NetworkAvailabilityService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkAvailabilityService.swift; sourceTree = "<group>"; };
 		52538D192D6474F900FB487A /* CryptoTracker.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CryptoTracker.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		52538D1C2D6474F900FB487A /* CryptoTrackerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CryptoTrackerApp.swift; sourceTree = "<group>"; };
 		52538D202D6474FA00FB487A /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -92,6 +94,22 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		520DFBFB2D75F7A50010ABF3 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				520DFBFC2D75F7AF0010ABF3 /* NetworkAvailability */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		520DFBFC2D75F7AF0010ABF3 /* NetworkAvailability */ = {
+			isa = PBXGroup;
+			children = (
+				520DFBFD2D75F7C30010ABF3 /* NetworkAvailabilityService.swift */,
+			);
+			path = NetworkAvailability;
+			sourceTree = "<group>";
+		};
 		52538D102D6474F900FB487A = {
 			isa = PBXGroup;
 			children = (
@@ -115,6 +133,7 @@
 		52538D1B2D6474F900FB487A /* CryptoTracker */ = {
 			isa = PBXGroup;
 			children = (
+				520DFBFB2D75F7A50010ABF3 /* Services */,
 				5283E1122D68C5C2002EE9E7 /* Models.swift */,
 				5283E1182D6C9BCF002EE9E7 /* CoinsList */,
 				52538D1C2D6474F900FB487A /* CryptoTrackerApp.swift */,
@@ -328,6 +347,7 @@
 				52538D1D2D6474F900FB487A /* CryptoTrackerApp.swift in Sources */,
 				5283E11C2D6C9E8B002EE9E7 /* FetchCoinDataNetworkService.swift in Sources */,
 				5283E1202D6DD860002EE9E7 /* CoinsListPresenter.swift in Sources */,
+				520DFBFE2D75F7C30010ABF3 /* NetworkAvailabilityService.swift in Sources */,
 				5283E1232D6DDA4A002EE9E7 /* CoinsListContracts.swift in Sources */,
 				5283E12E2D6DF139002EE9E7 /* CoinsListView.swift in Sources */,
 				5283E1302D6DF160002EE9E7 /* CoinsListViewModel.swift in Sources */,

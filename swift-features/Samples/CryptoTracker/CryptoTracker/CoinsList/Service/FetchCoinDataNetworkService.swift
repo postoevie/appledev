@@ -7,7 +7,12 @@
 
 import Foundation
 
-actor FetchCoinDataNetworkService: RemoteCoinDataServiceType {
+enum NetworkError: Error {
+    case httpFailed
+    case parseFail
+}
+
+actor FetchCoinDataNetworkService: CoinDataServiceRemoteType {
     
     func fetchCoinsList() async throws -> [String] {
         [

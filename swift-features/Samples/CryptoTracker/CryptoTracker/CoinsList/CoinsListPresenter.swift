@@ -20,11 +20,6 @@ struct CoinData: Equatable {
     let price: Double
 }
 
-enum NetworkError: Error {
-    case httpFailed
-    case parseFail
-}
-
 final class CoinsListPresenter: ObservableObject,
                                 CoinsListPresenterType,
                                 FetchCoinDataUseCaseResponder {

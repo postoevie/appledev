@@ -38,13 +38,13 @@ protocol FetchCoinDataUseCaseResponder: AnyObject {
     func coinsDataFetchUseCaseCompleted(data: [CoinData])
 }
 
-protocol RemoteCoinDataServiceType {
+protocol CoinDataServiceRemoteType {
     
     func fetchCoinsList() async throws -> [String]
     func fetchCoinPrice(coinName: String) async throws -> Double
 }
 
-protocol LocalCoinDataServiceType {
+protocol CoinDataServiceLocalType {
     
     func save(coinItems: [CoinData]) async throws
     func getItems() async throws -> [CoinData]
