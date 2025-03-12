@@ -14,6 +14,8 @@
 		52538D2F2D6474FA00FB487A /* CryptoTrackerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52538D2E2D6474FA00FB487A /* CryptoTrackerTests.swift */; };
 		52538D392D6474FA00FB487A /* CryptoTrackerUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52538D382D6474FA00FB487A /* CryptoTrackerUITests.swift */; };
 		52538D3B2D6474FA00FB487A /* CryptoTrackerUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52538D3A2D6474FA00FB487A /* CryptoTrackerUITestsLaunchTests.swift */; };
+		527E08052D772E5F00F2D478 /* CoinsListViewWithSwiftData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 527E08042D772E5F00F2D478 /* CoinsListViewWithSwiftData.swift */; };
+		527E08072D7730AD00F2D478 /* CoinsListSwiftDataAssembly.swift in Sources */ = {isa = PBXBuildFile; fileRef = 527E08062D7730AD00F2D478 /* CoinsListSwiftDataAssembly.swift */; };
 		5283E1132D68C5C2002EE9E7 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5283E1122D68C5C2002EE9E7 /* Models.swift */; };
 		5283E11A2D6C9BEF002EE9E7 /* SaveCoinDataPersistService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5283E1192D6C9BEF002EE9E7 /* SaveCoinDataPersistService.swift */; };
 		5283E11C2D6C9E8B002EE9E7 /* FetchCoinDataNetworkService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5283E11B2D6C9E8B002EE9E7 /* FetchCoinDataNetworkService.swift */; };
@@ -56,6 +58,8 @@
 		52538D342D6474FA00FB487A /* CryptoTrackerUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CryptoTrackerUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		52538D382D6474FA00FB487A /* CryptoTrackerUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CryptoTrackerUITests.swift; sourceTree = "<group>"; };
 		52538D3A2D6474FA00FB487A /* CryptoTrackerUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CryptoTrackerUITestsLaunchTests.swift; sourceTree = "<group>"; };
+		527E08042D772E5F00F2D478 /* CoinsListViewWithSwiftData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoinsListViewWithSwiftData.swift; sourceTree = "<group>"; };
+		527E08062D7730AD00F2D478 /* CoinsListSwiftDataAssembly.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoinsListSwiftDataAssembly.swift; sourceTree = "<group>"; };
 		5283E1122D68C5C2002EE9E7 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 		5283E1192D6C9BEF002EE9E7 /* SaveCoinDataPersistService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SaveCoinDataPersistService.swift; sourceTree = "<group>"; };
 		5283E11B2D6C9E8B002EE9E7 /* FetchCoinDataNetworkService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FetchCoinDataNetworkService.swift; sourceTree = "<group>"; };
@@ -170,9 +174,19 @@
 			path = CryptoTrackerUITests;
 			sourceTree = "<group>";
 		};
+		527E08032D772E4900F2D478 /* SwiftDataVariant */ = {
+			isa = PBXGroup;
+			children = (
+				527E08042D772E5F00F2D478 /* CoinsListViewWithSwiftData.swift */,
+				527E08062D7730AD00F2D478 /* CoinsListSwiftDataAssembly.swift */,
+			);
+			path = SwiftDataVariant;
+			sourceTree = "<group>";
+		};
 		5283E1182D6C9BCF002EE9E7 /* CoinsList */ = {
 			isa = PBXGroup;
 			children = (
+				527E08032D772E4900F2D478 /* SwiftDataVariant */,
 				5283E1222D6DDA4A002EE9E7 /* CoinsListContracts.swift */,
 				5283E1292D6DDC65002EE9E7 /* Service */,
 				5283E1242D6DDBCA002EE9E7 /* UseCase */,
@@ -346,6 +360,8 @@
 				5283E1282D6DDBE3002EE9E7 /* FetchCoinsDataUseCase.swift in Sources */,
 				52538D1D2D6474F900FB487A /* CryptoTrackerApp.swift in Sources */,
 				5283E11C2D6C9E8B002EE9E7 /* FetchCoinDataNetworkService.swift in Sources */,
+				527E08052D772E5F00F2D478 /* CoinsListViewWithSwiftData.swift in Sources */,
+				527E08072D7730AD00F2D478 /* CoinsListSwiftDataAssembly.swift in Sources */,
 				5283E1202D6DD860002EE9E7 /* CoinsListPresenter.swift in Sources */,
 				520DFBFE2D75F7C30010ABF3 /* NetworkAvailabilityService.swift in Sources */,
 				5283E1232D6DDA4A002EE9E7 /* CoinsListContracts.swift in Sources */,

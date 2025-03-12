@@ -10,7 +10,7 @@ import SwiftData
 
 ///  Actor gearantees mutex access. That allows to enqueue jobs and let it be taken by some thread in the pool.
 ///  Model Actor adds DefaultSerialModelExecutor making ModelContext access safe.
-@ModelActor actor SaveCoinDataPersistService: CoinDataServiceLocalType {
+@ModelActor actor CoinDataPersistService: CoinDataServiceLocalType {
  
     nonisolated func coinsDataFetchUseCaseCompleted(data: [CoinData]) {
         Task {
