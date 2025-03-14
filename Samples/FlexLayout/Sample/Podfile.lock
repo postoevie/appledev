@@ -1,0 +1,27 @@
+PODS:
+  - FlexLayout (0.0.1):
+    - FlexLayout/Source (= 0.0.1)
+    - SnapKit
+  - FlexLayout/Source (0.0.1):
+    - SnapKit
+  - SnapKit (5.7.1)
+
+DEPENDENCIES:
+  - FlexLayout (from `../`)
+  - SnapKit
+
+SPEC REPOS:
+  https://github.com/CocoaPods/Specs:
+    - SnapKit
+
+EXTERNAL SOURCES:
+  FlexLayout:
+    :path: "../"
+
+SPEC CHECKSUMS:
+  FlexLayout: c48c3b88117adb4f59ebb98b9545fda50d50ab15
+  SnapKit: d612e99e678a2d3b95bf60b0705ed0a35c03484a
+
+PODFILE CHECKSUM: b1e9319e93c349e57a4243de06a89545cd033980
+
+COCOAPODS: 1.16.2
