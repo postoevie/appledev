@@ -20,7 +20,8 @@ struct CoinData: Equatable {
     let price: Double
 }
 
-final class CoinsListPresenter: ObservableObject,
+final class CoinsListPresenter: @unchecked Sendable,
+                                ObservableObject,
                                 CoinsListPresenterType,
                                 FetchCoinDataUseCaseResponder {
     

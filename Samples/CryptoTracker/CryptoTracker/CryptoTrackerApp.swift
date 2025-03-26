@@ -9,30 +9,41 @@ import SwiftUI
 import SwiftData
 import BackgroundTasks
 
+// Malloc error on thread sanitizer on https://stackoverflow.com/questions/64126942/malloc-nano-zone-abandoned-due-to-inability-to-preallocate-reserved-vm-space
+
 @main
 struct CryptoTrackerApp: App {
     
     // https://developer.apple.com/documentation/swiftui/uiapplicationdelegateadaptor
     // @UIApplicationDelegateAdaptor private var appDelegate: MyAppDelegate
     
-    @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.scenePhase) var scenePhase
     
     var modelContainer: ModelContainer? = try? ModelContainer(for: Coin.self)
     
     var body: some Scene {
         WindowGroup {
             if let modelContainer {
-                //CoinsListAssembly().build(modelContainer: modelContainer)
                 CoinsListSwiftDataAssembly().build(modelContainer: modelContainer)
             }
         }
-        .onChange(of: scenePhase) { _, newState in
-            if newState == .background {
+        .onChange(of: scenePhase) { _, newPhase in
+            if newPhase == .active {
+                Task {
+                    let center = UNUserNotificationCenter.current()
+                    do {
+                        try await center.requestAuthorization(options: [.alert, .sound, .badge])
+                    } catch {
+                        // Handle the error here.
+                    }
+                }
+            }
+            if newPhase == .background {
+                print("phase changed to background in App")
                 scheduleRefreshCoins()
             }
         }
         .backgroundTask(.appRefresh("com.cryptotracker.refreshcoins")) {
-            await scheduleRefreshCoins()
             do {
                 try await refreshCoins()
                 if try await checkIfMetCondition() {
@@ -50,7 +61,7 @@ struct CryptoTrackerApp: App {
         do {
             try BGTaskScheduler.shared.submit(request)
         } catch {
-            print("Refresh background task shceduling error")
+            print("Refresh background task shceduling error \(error)")
         }
     }
     
@@ -81,10 +92,15 @@ struct CryptoTrackerApp: App {
     }
     
     func notifyConditionMet() async throws {
-        return;
-        let notificationRequest = UNNotificationRequest(identifier: "request",
-                                                        content: UNNotificationContent(),
-                                                        trigger: nil)
+        let content = UNMutableNotificationContent()
+        content.title = "Condition Met!"
+        content.body = "You have reached your target price!"
+        content.sound = .default
+        let trigger = UNCalendarNotificationTrigger(dateMatching: DateComponents(second: 5), repeats: false)
+        let uuidSrting = UUID().uuidString
+        let notificationRequest = UNNotificationRequest(identifier: uuidSrting,
+                                                        content: content,
+                                                        trigger: trigger)
         do {
             try await UNUserNotificationCenter.current().add(notificationRequest)
         } catch {

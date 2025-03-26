@@ -10,6 +10,8 @@ import SwiftUI
 struct CoinsListView<ViewModel: CoinsListViewModelType,
                      Presenter: CoinsListPresenterType>: View {
     
+    @Environment(\.scenePhase) private var scenePhase
+    
     @ObservedObject var viewModel: ViewModel
     @ObservedObject var presenter: Presenter
     
@@ -27,6 +29,13 @@ struct CoinsListView<ViewModel: CoinsListViewModelType,
         }
         .onDisappear {
             presenter.onDisappear()
+        }
+        .onChange(of: scenePhase) { _, phase in
+            switch phase {
+            case .active: presenter.onAppear()
+            case .background: presenter.onDisappear()
+            default: break;
+            }
         }
     }
 }

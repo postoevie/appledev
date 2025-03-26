@@ -7,16 +7,27 @@
 
 import Foundation
 import Combine
+import Dispatch
 
-final class FetchCoinsDataUseCase: FetchCoinsDataUseCaseType, NetworkAvailabilityReponder {
+// https://developer.apple.com/forums/thread/722411
+/*
+ A run loop is an event source dispatching mechanism. When you run it, it expects to block the calling thread for arbitrary amounts of time. If you call it from an async function, the calling thread is one of the threads from Swift concurrency’s cooperative thread pool.
+ */
+
+final class FetchCoinsDataUseCase: @unchecked Sendable, FetchCoinsDataUseCaseType, NetworkAvailabilityReponder {
     
-    private var updatePricesTimer: Timer? // Regularly causes prices update
+    //private var updatePricesTimer: Timer? // Regularly causes prices update
+    private var updatePricesTimer: DispatchSourceTimer? // Regularly causes prices update
     private var updatePricesTask: Task<Void, Never>? // Current prices updating task
     
     private var coinNames: [String] = []
     @Published private var coinData: [CoinData] = []
     
     private var subscriptions: [AnyCancellable] = []
+    private var isRunning: Bool = false
+    private var isStarted: Bool = false
+    
+    private let useCaseQueue = DispatchQueue(label: "cryptotest.concurrent")
     
     private let tickInterval: Double
     private let remoteDataService: CoinDataServiceRemoteType
@@ -34,19 +45,47 @@ final class FetchCoinsDataUseCase: FetchCoinsDataUseCaseType, NetworkAvailabilit
     }
     
     func start() {
-        Task {
-            self.coinData = try await localDataService.getItems()
+        useCaseQueue.async {
+            
+            // No need to start or continue use case which is being invoked
+            guard !self.isRunning else {
+                return
+            }
+            self.isRunning = true
+            
+            if let updatePricesTimer = self.updatePricesTimer,
+               updatePricesTimer.isCancelled == false {
+                updatePricesTimer.resume()
+                return
+            }
+            
+            // Run once
+            guard !self.isStarted else {
+                return
+            }
+            self.isStarted = true
+            
+            // Initial start of the use case invocation
             self.networkAvailabilityService.start()
+            Task {
+                self.coinNames = try await self.remoteDataService.fetchCoinsList()
+                self.coinData = try await self.localDataService.getItems()
+            }
         }
     }
     
     func cancel() {
-        updatePricesTimer?.invalidate()
-        updatePricesTask?.cancel()
+        useCaseQueue.async {
+            self.isRunning = false
+            self.updatePricesTimer?.suspend()
+            self.updatePricesTask?.cancel()
+            self.updatePricesTask = nil
+        }
     }
     
     func subscribe(_ responder: FetchCoinDataUseCaseResponder) {
         $coinData
+            .receive(on: useCaseQueue)
             .removeDuplicates()
             .sink { [weak responder] data in
                 responder?.coinsDataFetchUseCaseCompleted(data: data)
@@ -55,33 +94,13 @@ final class FetchCoinsDataUseCase: FetchCoinsDataUseCaseType, NetworkAvailabilit
     }
     
     @objc func timerFired() {
-        updatePricesTask?.cancel()
-        updatePricesTask = Task {
+        self.updatePricesTask?.cancel()
+        self.updatePricesTask = Task {
             do {
-                try await updatePrices()
-            } catch {
-                print(error)
-            }
-        }
-    }
-    
-    // MARK: NetworkAvailabilityReponder
-    
-    func networkAvailabilityStatusChanged(status: NetStatus) {
-        if status == .satisfied {
-            Task {
-                self.coinNames = try await remoteDataService.fetchCoinsList()
                 try await self.updatePrices()
-                await MainActor.run {
-                    self.updatePricesTimer = Timer.scheduledTimer(timeInterval: tickInterval,
-                                                                  target: self,
-                                                                  selector: #selector(self.timerFired),
-                                                                  userInfo: nil,
-                                                                  repeats: true)
-                }
+            } catch {
+                print("Update prices error \(error)")
             }
-        } else {
-            self.cancel()
         }
     }
     
@@ -107,11 +126,32 @@ final class FetchCoinsDataUseCase: FetchCoinsDataUseCaseType, NetworkAvailabilit
         
         try await localDataService.save(coinItems: coins)
         
-        coinData = try await localDataService.getItems()
+        self.coinData = try await localDataService.getItems()
+    }
+    
+    // MARK: NetworkAvailabilityReponder
+    
+    func networkAvailabilityStatusChanged(status: NetStatus) {
+        useCaseQueue.async {
+            if status == .satisfied {
+                // https://stackoverflow.com/questions/38164120/why-would-a-scheduledtimer-fire-properly-when-setup-outside-a-block-but-not-w
+                let timer = DispatchSource.makeTimerSource(queue: self.useCaseQueue)
+                timer.setEventHandler { [weak self] in
+                    self?.timerFired()
+                }
+                timer.schedule(deadline: .now(), repeating: self.tickInterval)
+                timer.resume()
+                self.updatePricesTimer = timer
+            } else {
+                self.isRunning = false
+                self.updatePricesTimer?.cancel()
+                self.updatePricesTask?.cancel()
+            }
+        }
     }
     
     deinit {
-        updatePricesTimer?.invalidate()
+        updatePricesTimer?.cancel()
     }
 }
 

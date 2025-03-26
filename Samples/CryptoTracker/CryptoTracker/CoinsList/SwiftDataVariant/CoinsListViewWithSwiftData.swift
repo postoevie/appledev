@@ -10,16 +10,28 @@ import SwiftData
 
 struct CoinsListViewWithSwiftData: View {
     
+    @Environment(\.scenePhase) private var scenePhase
+    
     @Query(sort: \Coin.name) private var coins: [Coin]
     
-    let fetchUseCase: FetchCoinsDataUseCase
+    var fetchUseCase: FetchCoinsDataUseCase
     
     var body: some View {
-        List(coins, id: \.name) { item in
+        VStack {
+            List(coins, id: \.name) { item in
+                HStack {
+                    Text(item.name)
+                    Spacer()
+                    Text(String(item.price))
+                }
+            }
             HStack {
-                Text(item.name)
-                Spacer()
-                Text(String(item.price))
+                Button("") {
+                    fetchUseCase.cancel()
+                }
+                Button("Stop timer") {
+                    fetchUseCase.cancel()
+                }
             }
         }
         .onAppear {
@@ -27,6 +39,13 @@ struct CoinsListViewWithSwiftData: View {
         }
         .onDisappear {
             fetchUseCase.cancel()
+        }
+        .onChange(of: scenePhase) { _, phase in
+            switch phase {
+            case .active: fetchUseCase.start()
+            case .background: fetchUseCase.cancel()
+            default: break;
+            }
         }
     }
 }

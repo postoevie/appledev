@@ -22,31 +22,33 @@ protocol NetworkAvailabilityServiceType: AnyObject {
 
 typealias NetStatus = NWPath.Status
 
-final class NetworkAvailabilityService: ObservableObject, NetworkAvailabilityServiceType {
+final class NetworkAvailabilityService: @unchecked Sendable, ObservableObject, NetworkAvailabilityServiceType {
     
-    @Published private var netStatus: NetStatus?
+    @Published var netStatus: NetStatus = .unsatisfied
+    
     private let networkMonitor = NWPathMonitor()
-    private let networkMonitorQueue = DispatchQueue(label: "cryptoTracker.networkMonitor")
+    private let serviceQueue = DispatchQueue(label: "cryptoTracker.networkAvailabilityService")
     
     private var subscriptions: [AnyCancellable] = []
-    private var isStarted = false
+    private var isRunning = false
     
     func start() {
-        guard isStarted == false else {
-            netStatus = networkMonitor.currentPath.status // Update instead of start
-            return
+        serviceQueue.async {
+            guard self.isRunning == false else {
+                return
+            }
+            self.isRunning = true
+            self.networkMonitor.pathUpdateHandler = { [weak self] path in
+                self?.netStatus = path.status
+            }
+            self.networkMonitor.start(queue: self.serviceQueue)
         }
-        isStarted = true
-        networkMonitor.pathUpdateHandler = { [weak self] path in
-            self?.netStatus = path.status
-        }
-        networkMonitor.start(queue: networkMonitorQueue)
     }
     
     func subscribe(_ responder: NetworkAvailabilityReponder) {
         $netStatus
+            .receive(on: serviceQueue)
             .removeDuplicates()
-            .compactMap { $0 }
             .sink { [weak responder] status in
                 responder?.networkAvailabilityStatusChanged(status: status)
             }

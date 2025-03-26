@@ -8,6 +8,7 @@
 import SwiftData
 import SwiftUI
 
+@MainActor
 struct CoinsListAssembly {
     
     func build(modelContainer: ModelContainer) -> some View {
