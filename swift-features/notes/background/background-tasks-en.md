@@ -29,11 +29,12 @@ So, when implementing some continuous operation which should be finished if user
 
 - Task requests are being submitted in BGTaskScheduler which monitors battery usage, network status, system load. When conditions are met it creates a task instance and delivers it to the app. App can be launched for performing several tasks at once. Need to handle expiration and setTaskCompleted. 
 
+- Location updates in background. https://developer.apple.com/documentation/corelocation/handling-location-updates-in-the-background
+
 After scheduling the task, we can mock/force a system call to activate our scheduled task via the debugger with:
 e -l objc -- (void)[[BGTaskScheduler sharedScheduler] _simulateLaunchForTaskWithIdentifier:@"TASK_IDENTIFIER"]
 
 https://developer.apple.com/videos/play/wwdc2019/707
 https://developer.apple.com/documentation/backgroundtasks/choosing-background-strategies-for-your-app
-https://www.youtube.com/watch?v=JDw4Cs1Hbpo Efficiency awaits
 https://uynguyen.github.io/2020/09/26/Best-practice-iOS-background-processing-Background-App-Refresh-Task/
 

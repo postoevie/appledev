@@ -11,13 +11,75 @@ import BackgroundTasks
 
 // Malloc error on thread sanitizer on https://stackoverflow.com/questions/64126942/malloc-nano-zone-abandoned-due-to-inability-to-preallocate-reserved-vm-space
 
+class AppDelegate: NSObject, UIApplicationDelegate, ObservableObject {
+    
+    // This gives us access to the methods from our main app code inside the app delegate
+
+    func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
+        // This is where we register this device to recieve push notifications from Apple
+        // All this function does is register the device with APNs, it doesn't set up push notifications by itself
+        
+        // https://developer.apple.com/documentation/usernotifications/registering-your-app-with-apns
+        application.registerForRemoteNotifications()
+        
+        // Setting the notification delegate
+        UNUserNotificationCenter.current().delegate = self
+        
+        return true
+    }
+    
+    func application(_ application: UIApplication,
+                       didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+        // Once the device is registered for push notifications Apple will send the token to our app and it will be available here.
+        // This is also where we will forward the token to our push server
+        // If you want to see a string version of your token, you can use the following code to print it out
+        let stringifiedToken = deviceToken.map { String(format: "%02.2hhx", $0) }.joined()
+        print("stringifiedToken:", stringifiedToken)
+    }
+    
+    func application(_ application: UIApplication,
+                     didFailToRegisterForRemoteNotificationsWithError
+                     error: Error) {
+        print("Fail registering in APN, \(error.localizedDescription)")
+    }
+    
+    func applicationWillTerminate(_ application: UIApplication) {
+        print("App will be terminated")
+    }
+}
+
+extension AppDelegate: UNUserNotificationCenterDelegate {
+    
+    // This function lets us do something when the user interacts with a notification
+    // like log that they clicked it, or navigate to a specific screen
+    nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter,
+                                            didReceive response: UNNotificationResponse) async {
+            print("Got notification title: ", response.notification.request.content.title)
+    }
+    
+    // This function allows us to view notifications in the app even with it in the foreground
+    nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter,
+                                            willPresent notification: UNNotification) async -> UNNotificationPresentationOptions {
+        // These options are the options that will be used when displaying a notification with the app in the foreground
+        // for example, we will be able to display a badge on the app a banner alert will appear and we could play a sound
+        return [.badge, .banner, .list, .sound]
+    }
+    
+    // Use this method to process incoming remote notifications. The system calls this method when your app is running in the foreground or background
+    func application(_ application: UIApplication,
+                     didReceiveRemoteNotification userInfo: [AnyHashable : Any]) async -> UIBackgroundFetchResult {
+        
+        return .newData
+    }
+}
+
 @main
 struct CryptoTrackerApp: App {
     
-    // https://developer.apple.com/documentation/swiftui/uiapplicationdelegateadaptor
-    // @UIApplicationDelegateAdaptor private var appDelegate: MyAppDelegate
-    
     @Environment(\.scenePhase) var scenePhase
+    
+    // https://developer.apple.com/documentation/swiftui/uiapplicationdelegateadaptor
+    @UIApplicationDelegateAdaptor private var appDelegate: AppDelegate
     
     var modelContainer: ModelContainer? = try? ModelContainer(for: Coin.self)
     
