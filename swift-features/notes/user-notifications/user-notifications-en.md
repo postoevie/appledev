@@ -33,7 +33,7 @@ background - Starts a background task https://developer.apple.com/documentation/
 
 controls - https://developer.apple.com/documentation/WidgetKit/Updating-controls-locally-and-remotely
 
-location - app's location extension is activated when recieved push notification and then, user's location can be handled. https://developer.apple.com/documentation/CoreLocation/creating-a-location-push-service-extension
+location - app's location extension is activated when recieved push notification and then, user's location can be handled.https://developer.apple.com/documentation/CoreLocation/creating-a-location-push-service-extension
 
 voip - https://developer.apple.com/documentation/PushKit/responding-to-voip-notifications-from-pushkit
 
